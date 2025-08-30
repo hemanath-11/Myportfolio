@@ -201,7 +201,7 @@
                         <i class="fab fa-linkedin-in"></i>
                     </a>
                  <!-- Email -->
-                   <a href="mailto:hemanathpd11gmail.com"
+                   <a href="mailto:hemanathpd@11gmail.com"
                     class="text-xl w-10 h-10 flex items-center justify-center rounded-full bg-slate-800 text-white hover:bg-green-500 transition-colors duration-300">
                      <i class="fas fa-envelope"></i>
                 </a>
@@ -716,7 +716,7 @@
                             </div>
                             <div>
                                 <h4 class="font-bold mb-1">Email</h4>
-                                <p class="text-slate-400">hemanathpd11gmail.com</p>
+                                <p class="text-slate-400">hemanath@pd11gmail.com</p>
                             </div>
                         </div>
                         
@@ -746,9 +746,12 @@
                         </div>
                     </div>
                 </div>
-                
+              <!-- message form    -->
                 <div>
                     <h3 class="text-2xl font-bold mb-6">Send Me a Message</h3>
+                     <form id="contactForm" class="space-y-6"
+                     action="https://script.google.com/macros/s/AKfycbxWUFM0ZezMIeCm1WlH41ziI_7pVkDDnpIRUwylXu-W_o_bznszYpKcM2HIYB9FHMIb/exec"
+                     method="POST">
                     <form class="space-y-6">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
@@ -771,11 +774,14 @@
                         <button type="submit" class="px-8 py-3 rounded-full btn-primary font-medium w-full">
                             Send Message <i class="fas fa-paper-plane ml-2"></i>
                         </button>
+                          <p id="formMessage" class="hidden text-center mt-4"></p>
                     </form>
                 </div>
             </div>
         </div>
     </section>
+    </form>
+
     
     <!-- Footer -->
     <footer class="bg-darker py-12">
@@ -816,6 +822,9 @@
     </button>
     
     <script>
+
+
+        
         // Mobile menu toggle
         const menuToggle = document.getElementById('menu-toggle');
         const mobileMenu = document.getElementById('mobile-menu');
@@ -910,6 +919,87 @@
         };
         
         window.addEventListener('scroll', animateSkillBars);
-    </script>
+
+// Form submission handling
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.querySelector("#contactForm");
+  const formMessage = document.querySelector("#formMessage");
+  if (!form || !formMessage) return; // graceful no-op if markup changes [13][14]
+
+  const submitBtn = form.querySelector('button[type="submit"]');
+
+  const showMessage = (text, tone = "success") => {
+    formMessage.textContent = text;
+    formMessage.className =
+      (tone === "success"
+        ? "text-green-500"
+        : tone === "warning"
+        ? "text-amber-500"
+        : "text-red-500") + " text-center mt-4";
+    formMessage.classList.remove("hidden");
+  }; // status helper [15][13]
+
+  const setSubmitting = (isSubmitting) => {
+    if (!submitBtn) return;
+    submitBtn.disabled = isSubmitting;
+    submitBtn.dataset.originalText ||= submitBtn.innerHTML;
+    submitBtn.innerHTML = isSubmitting
+      ? 'Sending… <i class="fas fa-spinner fa-spin ml-2"></i>'
+      : submitBtn.dataset.originalText;
+  }; // prevent double-submit [14][15]
+
+  form.addEventListener("submit", async (e) => {
+    // Native validation
+    if (typeof form.reportValidity === "function" && !form.reportValidity()) {
+      e.preventDefault();
+      return;
+    } // HTML5 validation [14][15]
+
+    e.preventDefault();
+    if (submitBtn && submitBtn.disabled) return; // already submitting [14][15]
+
+    setSubmitting(true);
+    showMessage("Submitting…", "warning");
+
+    // Timeout guard
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s [9]
+
+    try {
+      const formData = new FormData(form);
+      const res = await fetch(form.action || window.location.href, {
+        method: (form.method || "POST").toUpperCase(),
+        body: formData,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Request failed: ${res.status} ${res.statusText}${text ? " — " + text.slice(0, 160) : ""}`);
+      } // response guard [15][13]
+
+      // Success: notify, reset, then refresh after 2s
+      showMessage("✅ Thank you! We will reach you soon.", "success");
+      form.reset();
+
+      setTimeout(() => {
+        // Choose one:
+        // window.location.reload();            // standard reload [2][10]
+        window.location.replace(window.location.href); // reload without adding to history [10]
+      }, 2000); // 2 seconds [2][9]
+
+    } catch (err) {
+      console.error(err);
+      clearTimeout(timeoutId);
+      showMessage("❌ Failed to send. Please try again.", "error");
+    } finally {
+      setSubmitting(false);
+    }
+  });
+});
+
+</script>
+
 </body>
 </html>
